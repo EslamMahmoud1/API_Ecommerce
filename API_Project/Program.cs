@@ -1,14 +1,6 @@
-using API_Project.Error;
-using Core.Interfaces.Repositories;
-using Core.Interfaces.Services;
-using Microsoft.AspNetCore.Mvc;
+using API_Project.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
-using Repository.DataSeeding;
-using Repository.Repositories;
-using Services;
-using StackExchange.Redis;
-using System.Reflection;
 
 namespace API_Project
 {
@@ -21,33 +13,19 @@ namespace API_Project
             // Add services to the container.
             builder.Services.AddDbContext<ApiProjectContext>(options
                 => options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+            builder.Services.AddDbContext<IdentityContext>(options
+                => options.UseSqlServer(builder.Configuration.GetConnectionString("Identity")));
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            builder.Services.AddScoped<IProductService, ProductService>();
-            builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddSingleton<IConnectionMultiplexer>(opt =>
-            {
-                var config = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("RedisConnection"));
-                return ConnectionMultiplexer.Connect(config);
-            });
 
-            builder.Services.Configure<ApiBehaviorOptions>(options =>
-            {
-                options.InvalidModelStateResponseFactory = context =>
-                {
-                    var errors = context.ModelState.Where(e => e.Value.Errors.Any())
-                    .SelectMany(e => e.Value.Errors).Select(e => e.ErrorMessage).ToList();
-
-                    return new BadRequestObjectResult(new ValidationResponse() { Errors = errors });
-                };
-            });
+            builder.Services.ApplicationService(builder.Configuration);
+            builder.Services.AddIdentityService(builder.Configuration);
 
             var app = builder.Build();
 
-            await InitializeDbAsync(app);
+            await DbInit.InitializeDbAsync(app);
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -57,7 +35,7 @@ namespace API_Project
 
             app.UseStaticFiles();
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
@@ -66,26 +44,5 @@ namespace API_Project
         }
 
 
-        private static async Task InitializeDbAsync(WebApplication app)
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                var service = scope.ServiceProvider;
-                var loggerFactory = service.GetRequiredService<ILoggerFactory>();
-                try
-                {
-                    var context = service.GetRequiredService<ApiProjectContext>();
-                    if ((await context.Database.GetPendingMigrationsAsync()).Any())
-                        await context.Database.MigrateAsync();
-                    await DataSeed.SeedData(context);
-                }
-                catch (Exception ex)
-                {
-                    var logger = loggerFactory.CreateLogger<Program>();
-                    logger.LogError(ex.Message);
-                }
-            }
-
-        }
     }
 }
