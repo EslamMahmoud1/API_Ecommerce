@@ -17,10 +17,13 @@ namespace API_Project.Extensions
                 var manager = service.GetRequiredService<UserManager<ApplicationUser>>();
                 try
                 {
-                    var context = service.GetRequiredService<ApiProjectContext>();
-                    if ((await context.Database.GetPendingMigrationsAsync()).Any())
-                        await context.Database.MigrateAsync();
-                    await DataSeed.SeedData(context);
+                    var Projectcontext = service.GetRequiredService<ApiProjectContext>();
+                    var Identitycontext = service.GetRequiredService<IdentityContext>();
+                    if ((await Projectcontext.Database.GetPendingMigrationsAsync()).Any())
+                        await Projectcontext.Database.MigrateAsync();
+                    if ((await Identitycontext.Database.GetPendingMigrationsAsync()).Any())
+                        await Identitycontext.Database.MigrateAsync();
+                    await DataSeed.SeedData(Projectcontext);
                     await UsersSeed.SeedUsers(manager);
                 }
                 catch (Exception ex)

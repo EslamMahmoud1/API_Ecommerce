@@ -1,4 +1,5 @@
 ﻿using Core.Models;
+using Core.Models.Order;
 using Repository.Context;
 using System.Text.Json;
 
@@ -39,6 +40,17 @@ namespace Repository.DataSeeding
                 if (productObject != null)
                 {
                     await context.Set<Product>().AddRangeAsync(productObject);
+                    await context.SaveChangesAsync();
+                }
+            }
+            if (!context.Set<DeliveryMethod>().Any())
+            {
+                var DeliveryMethods = await File.ReadAllTextAsync(@"..\Repository\DataSeeding\delivery.json");
+                var DeliveryObject = JsonSerializer.Deserialize<List<DeliveryMethod>>(DeliveryMethods);
+
+                if (DeliveryObject != null)
+                {
+                    await context.Set<DeliveryMethod>().AddRangeAsync(DeliveryObject);
                     await context.SaveChangesAsync();
                 }
             }
