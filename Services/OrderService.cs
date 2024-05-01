@@ -13,6 +13,8 @@ namespace Services
         private readonly IBasketService _basketService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IPaymentService _paymentService;
+
 
         public OrderService(IBasketService basketService, IUnitOfWork unitOfWork, IMapper mapper)
         {
@@ -49,6 +51,19 @@ namespace Services
 
             if (deliveryMethod == null) throw new Exception("invalid Delivery Method");
 
+            var spec = new PaymentIntentForOrderSpecification(basket.Id);
+            var orderForSpecificPaymentIntent = await _unitOfWork.GetRepository<Order,Guid>().GetByIdWithSpecificationAsync(spec);
+
+            if (orderForSpecificPaymentIntent == null)
+            {
+                await _paymentService.CreateOrUpdatePaymentIntentForNewOrder(basket.Id);
+            }
+            else
+            {
+                _unitOfWork.GetRepository<Order, Guid>().Delete(orderForSpecificPaymentIntent);
+                await _paymentService.CreateOrUpdatePaymentIntentForExistingOrder(basket);
+            }
+
             var shippingAddress = _mapper.Map<ShippingAddress>(order.Address);
             var createdOrder = new Order
             {
@@ -57,6 +72,7 @@ namespace Services
                 DeliveryMethod = deliveryMethod,
                 shippingAddress = shippingAddress,
                 SubTotal = orderItems.Sum(item => item.Price * item.Quantity),
+                
             };
             return _mapper.Map<OrderResultDto>(createdOrder);
         }

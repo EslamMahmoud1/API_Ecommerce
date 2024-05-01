@@ -12,6 +12,8 @@ namespace Core.DataTransferObjects.Order
         public IEnumerable<OrderItemDto> orderItems { get; set; }
         public PaymentStatus status { get; set; }
         public decimal SubTotal { get; set; }
+        public string? PaymentIntentId { get; set; }
+        public string? BasketId { get; set; }
         public decimal DeliveryPrice { get; set; }
         public decimal Total {  get; set; }
     }

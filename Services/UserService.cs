@@ -35,9 +35,27 @@ namespace Services
             return null;
         }
 
-        public Task<UserDto> Register(RegisterDto RegisterUser)
+        public async Task<UserDto> Register(RegisterDto RegisterUser)
         {
-            throw new NotImplementedException();
+            var user = _UserManager.FindByEmailAsync(RegisterUser.Email);
+            if (user is not null) throw new Exception("this user already registered");
+
+            var appUser = new ApplicationUser()
+            {
+                DisplayName = RegisterUser.DisplayName,
+                Email = RegisterUser.Email,
+                UserName = RegisterUser.Email
+            };
+            var res = await _UserManager.CreateAsync(appUser);
+            if (!res.Succeeded) throw new Exception("error while creating user");
+
+            var returnUser = new UserDto()
+            {
+                DisplayName = appUser.DisplayName,
+                Email = appUser.Email,
+                Token = tokenService.GenerateToken(appUser)
+            };
+            return returnUser;
         }
     }
 }

@@ -9,6 +9,8 @@
         public int DeliveryMethodId { get; set; }
         public IEnumerable<OrderItem> orderItems { get; set; }
         public PaymentStatus status { get; set; }
+        public string? PaymentIntentId { get; set; }
+        public string? BasketId { get; set; }
         public decimal SubTotal { get; set; }
         public decimal Total => SubTotal + DeliveryMethod.Price;
 

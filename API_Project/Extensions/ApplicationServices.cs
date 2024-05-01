@@ -16,6 +16,8 @@ namespace API_Project.Extensions
             Services.AddEndpointsApiExplorer();
             Services.AddSwaggerGen();
             Services.AddScoped<IProductService, ProductService>();
+            Services.AddScoped<IOrderService, OrderService>();
+            Services.AddScoped<IPaymentService, PaymentService>();
             Services.AddAutoMapper(Assembly.GetExecutingAssembly());
             Services.AddScoped<IUnitOfWork, UnitOfWork>();
             Services.AddScoped<IBasketService, BasketService>();
